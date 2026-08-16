@@ -675,20 +675,6 @@ footer .doodle-row{ font-size:1.4rem; opacity:.5; margin-top:6px; letter-spacing
 .reveal-up{ opacity:0; transform:translateY(30px); transition:opacity .7s ease, transform .7s ease; }
 .reveal-up.in{ opacity:1; transform:translateY(0); }
 
-/* terminal */
-.terminal-toggle{
-  position:fixed; bottom:20px; right:20px; width:50px; height:50px; border-radius:50%;
-  background:var(--dark); color:var(--secondary); display:flex; align-items:center; justify-content:center;
-  box-shadow:0 8px 18px rgba(0,0,0,.3); z-index:900; font-size:1.1rem;
-}
-.terminal-toggle:hover{ background:var(--primary); }
-.terminal-box{
-  position:fixed; bottom:82px; right:20px; width:320px; max-width:80vw; background:#1b1410; color:#c9f7c9;
-  font-family:monospace; font-size:.78rem; border-radius:10px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.4);
-  z-index:900; display:none; line-height:1.6;
-}
-.terminal-box.open{ display:block; }
-.terminal-box .l1{ color:#f6e4c1; }
 </style>
 </head>
 <body>
@@ -718,7 +704,7 @@ footer .doodle-row{ font-size:1.4rem; opacity:.5; margin-top:6px; letter-spacing
       <span class="eyebrow">Hello, I'm Varsha —</span>
       <h1 class="hero-heading">PORTF<span class="accent">olio</span></h1>
       <p class="hero-sub">Full Stack Web Developer</p>
-      <p class="hero-desc">Computer Science graduate who builds full-stack apps with React, Node.js and Python. I turn messy ideas into working software — one commit, one bug fix, one late-night coffee at a time.</p>
+      <p class="hero-desc">Computer Science graduate who builds full-stack apps with React, Node.js and Python. I turn fictional ideas into working software and real code — One Brain,Countless commits,Infinite Fixes.</p>
       <div class="hero-cta">
         <a href="#projects" class="btn btn-primary"><i class="fa-solid fa-diagram-project"></i> View Projects</a>
         <a href="./uploads/Resume.pdf" download class="btn btn-outline"><i class="fa-solid fa-download"></i> Download Resume</a>
@@ -749,9 +735,16 @@ footer .doodle-row{ font-size:1.4rem; opacity:.5; margin-top:6px; letter-spacing
   <div class="wrap about-grid">
     <div class="reveal-up">
       <span class="eyebrow">Chapter One —</span>
-      <h2 class="section-title">About the developer</h2>
-      <p>I'm a BCA graduate from Bagalkot, Karnataka, who fell in love with the moment a bug turns green. Across two internships I've shipped UI components, fixed production issues, and learned that good software is mostly good communication with your future self.</p>
-      <p>Outside the editor, I'm usually reading about new frameworks, sketching layouts on actual paper (see: this website), or explaining Data Structures to a room of 200 people because apparently I like public speaking too.</p>
+      <h2 class="section-title">A Little About Me!</h2>
+      <p>I like taking an idea that exists only in my head and turning it into something you can actually click, use, and explore.</p>
+
+<p>I’m Varsha, a Full Stack Developer in the making, currently building with React, Node.js, Express, Python, and databases. I enjoy the whole process, from designing how something looks to figuring out what’s happening behind the screen.</p>
+
+<p>I’m curious by nature, slightly obsessed with making things better, and always trying something new. Lately, that includes AI-powered development, where I’m learning how to build smarter products without losing the fundamentals.</p>
+
+<p>This portfolio is a small collection of what I’ve been learning, building, breaking, fixing, and creating along the way.
+
+<p>Still learning. Still building. Definitely not done yet.</p>
     </div>
     <div class="about-image-wrap">
       <svg class="arrow-svg" viewBox="0 0 400 500" preserveAspectRatio="none">
@@ -860,7 +853,7 @@ footer .doodle-row{ font-size:1.4rem; opacity:.5; margin-top:6px; letter-spacing
           <div class="hl-card"><div class="k">CGPA</div><div class="v">9.0+ / Top of class</div></div>
           <div class="hl-card"><div class="k">Experience</div><div class="v">2 internships (UptoSkills, Apponix)</div></div>
           <div class="hl-card"><div class="k">Projects</div><div class="v">LMS platform + component library</div></div>
-          <div class="hl-card"><div class="k">Technical Skills</div><div class="v">React, Node, FastAPI, MongoDB, Django</div></div>
+          <div class="hl-card"><div class="k">Technical Skills</div><div class="v">·JavaScript ·Python ·React.js ·Node.js ·Express.js ·FastAPI ·HTML5 ·CSS3 ·Tailwind CSS ·REST APIs ·MongoDB ·MySQL ·PostgreSQL</div></div>
           <div class="hl-card"><div class="k">Achievements</div><div class="v">7 certifications, 210+ audience talks</div></div>
         </div>
         <div class="resume-btns">
@@ -985,18 +978,6 @@ footer .doodle-row{ font-size:1.4rem; opacity:.5; margin-top:6px; letter-spacing
     <p class="doodle-row">☕ 💻 ✦ 📎 ✧</p>
   </div>
 </footer>
-
-<button class="terminal-toggle" id="terminalToggle" aria-label="Open terminal easter egg"><i class="fa-solid fa-terminal"></i></button>
-<div class="terminal-box" id="terminalBox">
-  <div class="l1">varsha@portfolio ~ %</div>
-  <div>$ whoami</div>
-  <div>&gt; a developer who reads the console</div>
-  <div>$ git log --oneline -3</div>
-  <div>&gt; a1b2c3d fix: the bug that broke everything</div>
-  <div>&gt; e4f5g6h feat: add coffee to build pipeline</div>
-  <div>&gt; h7i8j9k chore: it works on my machine</div>
-  <div>$ echo "try the konami code ↑↑↓↓←→←→ba"</div>
-</div>
 
 <script>
 // ========== CONFIG ==========
@@ -1711,11 +1692,6 @@ function initCounters() {
   },{threshold:.5});
   counters.forEach(c=>counterObs.observe(c));
 }
-
-// ---------- Terminal easter egg ----------
-const terminalToggle = document.getElementById('terminalToggle');
-const terminalBox = document.getElementById('terminalBox');
-terminalToggle.addEventListener('click', ()=>terminalBox.classList.toggle('open'));
 
 // ---------- Coffee mug click easter egg ----------
 let mugClicks = 0;

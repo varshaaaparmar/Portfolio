@@ -227,7 +227,7 @@ app.get('/api/contacts', (req, res) => {
   try {
     // Simple auth via query param (for demo)
     const { key } = req.query;
-    if (key !== 'varsha2026') {
+    if (key !== process.env.ADMIN_KEY) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
@@ -252,7 +252,7 @@ app.get('/api/contacts', (req, res) => {
 // Get single contact
 app.get('/api/contacts/:id', (req, res) => {
   const { key } = req.query;
-  if (key !== 'varsha2026') {
+  if (key !== process.env.ADMIN_KEY) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
 
@@ -273,7 +273,7 @@ app.get('/api/contacts/:id', (req, res) => {
 // Update contact status
 app.patch('/api/contacts/:id', (req, res) => {
   const { key } = req.query;
-  if (key !== 'varsha2026') {
+  if (key !== process.env.ADMIN_KEY) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
 
@@ -299,7 +299,7 @@ app.patch('/api/contacts/:id', (req, res) => {
 // Delete contact
 app.delete('/api/contacts/:id', (req, res) => {
   const { key } = req.query;
-  if (key !== 'varsha2026') {
+  if (key !== process.env.ADMIN_KEY) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
 
@@ -390,10 +390,9 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Portfolio backend running on http://localhost:${PORT}`);
-  console.log(`📁 Database: ${DB_PATH}`);
-  console.log(`📬 Contact form endpoint: POST /api/contact`);
-  console.log(`🔐 Admin key for protected routes: varsha2026`);
+  console.log(`Portfolio backend running on http://localhost:${PORT}`);
+  console.log(`Database: ${DB_PATH}`);
+  console.log(`Contact form endpoint: POST /api/contact`);
 });
 
 // Graceful shutdown
