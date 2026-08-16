@@ -157,7 +157,7 @@ button{font-family:inherit; cursor:pointer; border:none; background:none;}
   right: 0;
   width: 52%;
   height: 100%;
-  background-image: url('uploads/varsha-cutout.png');
+  background-image: url('uploads/varsha-cutout.jpg');
   background-size: cover;
   background-position: center right;
   background-repeat: no-repeat;
@@ -205,6 +205,7 @@ button{font-family:inherit; cursor:pointer; border:none; background:none;}
   .hero-heading {
     font-size: clamp(2.4rem, 12vw, 3.6rem);
   }
+  /* Keep the photo, just reflow it above the text instead of hiding it */
   .hero::after {
     display: block;
     order: -1;
@@ -790,7 +791,7 @@ footer .doodle-row{ font-size:1.4rem; opacity:.5; margin-top:6px; letter-spacing
       </svg>
       <div class="about-photo">
         <div class="frame">
-          <img src="uploads/img.png" alt="Varsha Ghanchi">
+          <img src="uploads/img.jpg" alt="Varsha Ghanchi" loading="lazy" width="900" height="1125">
         </div>
       </div>
       <div class="scrap-note n1" data-reveal><span class="label">Favorite Tech</span><span class="val">React + FastAPI</span></div>
