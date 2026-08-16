@@ -187,7 +187,21 @@ button{font-family:inherit; cursor:pointer; border:none; background:none;}
   padding-right: 20px;
   margin: 0 20px 0 300px;
 }
-
+@media(max-width:600px){
+  .hero .wrap {
+    margin: 0 20px;
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .hero-heading {
+    font-size: clamp(2.4rem, 12vw, 3.6rem);
+  }
+  .hero::after {
+    width: 100%;
+    opacity: 0.25;
+  }
+}
 .hero-heading {
   font-family:var(--font-display); 
   font-weight:700; 
