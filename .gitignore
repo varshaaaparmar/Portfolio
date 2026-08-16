@@ -1,0 +1,14 @@
+# Environment variables (contains secrets — never commit this)
+.env
+
+# Dependencies
+node_modules/
+
+# Database (gets created automatically, don't need to commit it)
+portfolio.db
+*.db
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/
