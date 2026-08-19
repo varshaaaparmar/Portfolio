@@ -2,6 +2,11 @@
 
 This is the backend for my portfolio website, built with Node.js, Express and SQLite.
 
+## Live
+
+- Frontend: https://varsha-portfolio.vercel.app
+- Backend API: https://portfolio-kl31.onrender.com
+
 ## What it does
 
 - Handles contact form submissions (POST /api/contact)
@@ -26,7 +31,7 @@ This is the backend for my portfolio website, built with Node.js, Express and SQ
 | GET    | `/api/stats`          | Portfolio statistics            |
 
 ### Admin (protected)
-Add `?key=varsha2026` as a query parameter to use these:
+Add `?key=<your ADMIN_KEY>` as a query parameter to use these (see `ADMIN_KEY` in Environment variables below):
 
 | Method | Endpoint                  | Description                     |
 |--------|---------------------------|---------------------------------|
@@ -48,11 +53,16 @@ npm start
 npm run dev
 ```
 
-It runs on **http://localhost:3000**.
+It runs on **http://localhost:3000** locally. The live version is deployed on Render at **https://portfolio-kl31.onrender.com**.
 
 ## Connecting it to the frontend
 
-The contact form in `index.html` is wired up to call `POST http://localhost:3000/api/contact` with the name, email and message fields. On success it shows a "message sent" confirmation; if the backend is unreachable or returns an error, it shows an alert instead.
+The contact form in `index.html` is wired up to call `POST /api/contact` with the name, email and message fields. On success it shows a "message sent" confirmation; if the backend is unreachable or returns an error, it shows an alert instead.
+
+- Locally, this points at `http://localhost:3000/api/contact`.
+- In production, the frontend (deployed on Vercel at https://varsha-portfolio.vercel.app) calls the live backend at `https://portfolio-kl31.onrender.com/api/contact`.
+
+Note: the backend is on Render's free tier, so it may spin down when idle — the first request after a period of inactivity can take a few seconds while it wakes up.
 
 ## Environment variables
 
@@ -61,7 +71,8 @@ Create a `.env` file with:
 ```
 PORT=3000
 DB_PATH=./portfolio.db
-CORS_ORIGIN=*
+CORS_ORIGIN=https://varsha-portfolio.vercel.app
+ADMIN_KEY=choose-a-long-random-string-here
 
 # Optional — enables email notifications when someone submits the contact form
 EMAIL_USER=youraddress@gmail.com
@@ -70,6 +81,8 @@ NOTIFY_EMAIL=youraddress@gmail.com
 ```
 
 A template is in `.env.example` — copy it to `.env` and fill in your own values.
+
+⚠️ `ADMIN_KEY` guards the admin routes above. Pick a long, random value, keep it out of git (it should already be covered by `.gitignore` via `.env`), and never hardcode it in source or docs — a query-param key is easy to leak (browser history, server logs, Referer headers) so treat it as sensitive even though it's a stopgap, not real auth.
 
 ### Setting up email notifications
 
@@ -91,8 +104,8 @@ If `EMAIL_USER`/`EMAIL_PASS` are left blank, the server just skips sending email
 
 ## Notes for production
 
-- Set `CORS_ORIGIN` to your actual frontend domain instead of `*`
+- ~~Set `CORS_ORIGIN` to your actual frontend domain instead of `*`~~ — done, set to https://varsha-portfolio.vercel.app on Render
 - Add rate limiting
 - Use real admin authentication instead of the query-param key
-- Serve over HTTPS
-- Switch to PostgreSQL if it needs to scale
+- ~~Serve over HTTPS~~ — done, both Vercel and Render serve over HTTPS by default
+- Switch to PostgreSQL if it needs to scale (Render's free tier disk is ephemeral, so SQLite data can be wiped on redeploys/restarts — worth keeping in mind)
