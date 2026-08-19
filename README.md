@@ -1,4 +1,4 @@
-# Varsha Ghanchi Portfolio Backend
+## Portfolio Backend
 
 This is the backend for my portfolio website, built with Node.js, Express and SQLite.
 
@@ -39,6 +39,10 @@ Add `?key=<your ADMIN_KEY>` as a query parameter to use these (see `ADMIN_KEY` i
 | GET    | `/api/contacts/:id`       | Get a single message            |
 | PATCH  | `/api/contacts/:id`       | Update status (new/read/replied)|
 | DELETE | `/api/contacts/:id`       | Delete a message                |
+
+> **Note on `/api/contact` vs `/api/contacts`:** these are two different routes, and the HTTP method matters.
+> - `/api/contact` (singular) only accepts `POST` — it's how the frontend submits a new message. Visiting it directly in a browser sends a `GET`, which doesn't match any handler, so you'll see `"Endpoint not found"`.
+> - `/api/contacts` (plural) only accepts `GET` (or `PATCH`/`DELETE` with an id) and requires `?key=...`. Without the key you'll see `"Unauthorized"`; with the right key you'll get back the saved messages.
 
 ## How to run it
 
@@ -82,7 +86,7 @@ NOTIFY_EMAIL=youraddress@gmail.com
 
 A template is in `.env.example` — copy it to `.env` and fill in your own values.
 
-⚠️ `ADMIN_KEY` guards the admin routes above. Pick a long, random value, keep it out of git (it should already be covered by `.gitignore` via `.env`), and never hardcode it in source or docs — a query-param key is easy to leak (browser history, server logs, Referer headers) so treat it as sensitive even though it's a stopgap, not real auth.
+⚠️ `ADMIN_KEY` guards the admin routes above. Pick a long, random value, keep it out of git (it should already be covered by `.gitignore` via `.env`), and never hardcode it in source or docs — a query-param key is easy to leak (browser history, server logs, Referer headers, screenshots) so treat it as sensitive even though it's a stopgap, not real auth. If it ever ends up visible somewhere (a shared screenshot, a public commit, etc.), rotate it immediately by changing `ADMIN_KEY` in `.env` and in Render's environment variables.
 
 ### Setting up email notifications
 
@@ -104,7 +108,8 @@ If `EMAIL_USER`/`EMAIL_PASS` are left blank, the server just skips sending email
 
 ## Notes for production
 
-- Set `CORS_ORIGIN` to your actual frontend domain 
+- `CORS_ORIGIN` is already set to the live frontend domain (https://varsha-portfolio.vercel.app) on Render — update this if the frontend ever moves to a different domain
 - Add rate limiting
 - Use real admin authentication instead of the query-param key
-
+- Both Vercel and Render already serve over HTTPS by default
+- Consider PostgreSQL if this needs to scale — Render's free tier disk is ephemeral, so the SQLite file (and any saved contact messages) can be wiped on redeploys or restarts
