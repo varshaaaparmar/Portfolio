@@ -104,8 +104,7 @@ If `EMAIL_USER`/`EMAIL_PASS` are left blank, the server just skips sending email
 
 ## Notes for production
 
-- ~~Set `CORS_ORIGIN` to your actual frontend domain instead of `*`~~ — done, set to https://varsha-portfolio.vercel.app on Render
+- Set `CORS_ORIGIN` to your actual frontend domain 
 - Add rate limiting
 - Use real admin authentication instead of the query-param key
-- ~~Serve over HTTPS~~ — done, both Vercel and Render serve over HTTPS by default
-- Switch to PostgreSQL if it needs to scale (Render's free tier disk is ephemeral, so SQLite data can be wiped on redeploys/restarts — worth keeping in mind)
+
