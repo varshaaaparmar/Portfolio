@@ -1,13 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const Database = require('better-sqlite3');
-const path = require('path');
+const { createClient } = require('@libsql/client');
 const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_PATH = process.env.DB_PATH || './portfolio.db';
 
 // Email notifications (optional — only set up if credentials are provided)
 let mailTransporter = null;
@@ -45,103 +43,116 @@ function sendContactNotification({ name, email, message }) {
   });
 }
 
-// Initialize SQLite database
-const db = new Database(DB_PATH, { verbose: console.log });
-
-// Create tables if they don't exist
-db.exec(`
-  CREATE TABLE IF NOT EXISTS contacts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    message TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT DEFAULT 'new'
-  );
-
-  CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    slug TEXT UNIQUE NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
-    tech TEXT,
-    demo_url TEXT,
-    github_url TEXT,
-    backend_url TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS experiences (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    company TEXT NOT NULL,
-    role TEXT,
-    duration TEXT,
-    description TEXT,
-    tech TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-`);
-
-// Seed initial data (only if empty)
-const projectCount = db.prepare('SELECT COUNT(*) as count FROM projects').get().count;
-if (projectCount === 0) {
-  const insertProject = db.prepare(`
-    INSERT INTO projects (slug, title, description, tech, demo_url, github_url, backend_url)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  insertProject.run(
-    'lms',
-    'Brainrot Academy LMS',
-    'A complete LMS built with FastAPI and MongoDB — course content, user management and REST APIs, backend and database designed end-to-end.',
-    'Python, FastAPI, MongoDB, REST API',
-    'https://brainrot-academy-theta.vercel.app',
-    'https://github.com/varshaaaparmar',
-    'https://brainrot-academy.onrender.com'
-  );
-
-  insertProject.run(
-    'cards',
-    'Product Card Components',
-    'A set of production product-card components shipped during internships — reusable, responsive, and wired into React front ends across two live codebases.',
-    'React, HTML, CSS, JavaScript',
-    null,
-    'https://github.com/varshaaaparmar',
-    null
-  );
+// Initialize Turso (libSQL) database connection
+if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+  console.error('Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN in .env — see README for setup.');
+  process.exit(1);
 }
 
-const expCount = db.prepare('SELECT COUNT(*) as count FROM experiences').get().count;
-if (expCount === 0) {
-  const insertExp = db.prepare(`
-    INSERT INTO experiences (company, role, duration, description, tech)
-    VALUES (?, ?, ?, ?, ?)
-  `);
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN
+});
 
-  insertExp.run(
-    'UptoSkills',
-    'Software Developer Intern',
-    'Remote · Mar 2026 – Jun 2026',
-    JSON.stringify([
-      "Enhanced Skillova's UI, improving reliability for 180 users",
-      "Built 2 product card components with React & Node.js",
-      "Cut reported interface issues by 12% through targeted debugging",
-      "Reduced issue turnaround time by 45% with the dev team"
-    ]),
-    'HTML,CSS,JS,React,Node.js'
-  );
+// Create tables if they don't exist, then seed initial data
+async function initDb() {
+  await db.batch([
+    `CREATE TABLE IF NOT EXISTS contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      message TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      status TEXT DEFAULT 'new'
+    )`,
+    `CREATE TABLE IF NOT EXISTS projects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT UNIQUE NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      tech TEXT,
+      demo_url TEXT,
+      github_url TEXT,
+      backend_url TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS experiences (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company TEXT NOT NULL,
+      role TEXT,
+      duration TEXT,
+      description TEXT,
+      tech TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`
+  ], 'write');
 
-  insertExp.run(
-    'Apponix Technologies',
-    'Frontend Developer Intern',
-    'Jan 2026 – Feb 2026',
-    JSON.stringify([
-      "Built product card UI with HTML, CSS & JavaScript",
-      "Delivered front-end features using React & Node.js",
-      "Translated 2 design layouts into responsive components"
-    ]),
-    'HTML,CSS,JS,React,Node.js'
-  );
+  const projectCountRes = await db.execute('SELECT COUNT(*) as count FROM projects');
+  if (Number(projectCountRes.rows[0].count) === 0) {
+    await db.execute({
+      sql: `INSERT INTO projects (slug, title, description, tech, demo_url, github_url, backend_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        'lms',
+        'Brainrot Academy LMS',
+        'A complete LMS built with FastAPI and MongoDB — course content, user management and REST APIs, backend and database designed end-to-end.',
+        'Python, FastAPI, MongoDB, REST API',
+        'https://brainrot-academy-theta.vercel.app',
+        'https://github.com/varshaaaparmar',
+        'https://brainrot-academy.onrender.com'
+      ]
+    });
+
+    await db.execute({
+      sql: `INSERT INTO projects (slug, title, description, tech, demo_url, github_url, backend_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        'cards',
+        'Product Card Components',
+        'A set of production product-card components shipped during internships — reusable, responsive, and wired into React front ends across two live codebases.',
+        'React, HTML, CSS, JavaScript',
+        null,
+        'https://github.com/varshaaaparmar',
+        null
+      ]
+    });
+  }
+
+  const expCountRes = await db.execute('SELECT COUNT(*) as count FROM experiences');
+  if (Number(expCountRes.rows[0].count) === 0) {
+    await db.execute({
+      sql: `INSERT INTO experiences (company, role, duration, description, tech)
+            VALUES (?, ?, ?, ?, ?)`,
+      args: [
+        'UptoSkills',
+        'Software Developer Intern',
+        'Remote · Mar 2026 – Jun 2026',
+        JSON.stringify([
+          "Enhanced Skillova's UI, improving reliability for 180 users",
+          "Built 2 product card components with React & Node.js",
+          "Cut reported interface issues by 12% through targeted debugging",
+          "Reduced issue turnaround time by 45% with the dev team"
+        ]),
+        'HTML,CSS,JS,React,Node.js'
+      ]
+    });
+
+    await db.execute({
+      sql: `INSERT INTO experiences (company, role, duration, description, tech)
+            VALUES (?, ?, ?, ?, ?)`,
+      args: [
+        'Apponix Technologies',
+        'Frontend Developer Intern',
+        'Jan 2026 – Feb 2026',
+        JSON.stringify([
+          "Built product card UI with HTML, CSS & JavaScript",
+          "Delivered front-end features using React & Node.js",
+          "Translated 2 design layouts into responsive components"
+        ]),
+        'HTML,CSS,JS,React,Node.js'
+      ]
+    });
+  }
 }
 
 // Middleware
@@ -162,86 +173,82 @@ app.use((req, res, next) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     db: 'connected'
   });
 });
 
 // Contact form submission
-app.post('/api/contact', (req, res) => {
+app.post('/api/contact', async (req, res) => {
   const { name, email, message } = req.body;
 
   // Validation
   if (!name || !email || !message) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Name, email and message are required' 
+    return res.status(400).json({
+      success: false,
+      error: 'Name, email and message are required'
     });
   }
 
   // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Please provide a valid email address' 
+    return res.status(400).json({
+      success: false,
+      error: 'Please provide a valid email address'
     });
   }
 
   if (message.length < 10) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Message must be at least 10 characters long' 
+    return res.status(400).json({
+      success: false,
+      error: 'Message must be at least 10 characters long'
     });
   }
 
   try {
-    const stmt = db.prepare(`
-      INSERT INTO contacts (name, email, message) 
-      VALUES (?, ?, ?)
-    `);
-    
-    const result = stmt.run(name.trim(), email.trim(), message.trim());
+    const result = await db.execute({
+      sql: 'INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)',
+      args: [name.trim(), email.trim(), message.trim()]
+    });
 
     // Fire off an email notification — this won't block or fail the response
     sendContactNotification({ name: name.trim(), email: email.trim(), message: message.trim() });
 
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: 'Thank you! Your message has been received. I will get back to you soon.',
-      id: result.lastInsertRowid 
+      id: Number(result.lastInsertRowid)
     });
   } catch (error) {
     console.error('Database error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to save message. Please try again later.' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save message. Please try again later.'
     });
   }
 });
 
 // Get all contacts (for admin / portfolio owner)
-app.get('/api/contacts', (req, res) => {
+app.get('/api/contacts', async (req, res) => {
   try {
-    // Simple auth via query param (for demo)
     const { key } = req.query;
     if (key !== process.env.ADMIN_KEY) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const stmt = db.prepare(`
-      SELECT id, name, email, message, created_at, status 
-      FROM contacts 
+    const result = await db.execute(`
+      SELECT id, name, email, message, created_at, status
+      FROM contacts
       ORDER BY created_at DESC
     `);
-    const contacts = stmt.all();
 
-    res.json({ 
-      success: true, 
-      count: contacts.length,
-      contacts 
+    res.json({
+      success: true,
+      count: result.rows.length,
+      contacts: result.rows
     });
   } catch (error) {
     console.error(error);
@@ -250,28 +257,30 @@ app.get('/api/contacts', (req, res) => {
 });
 
 // Get single contact
-app.get('/api/contacts/:id', (req, res) => {
+app.get('/api/contacts/:id', async (req, res) => {
   const { key } = req.query;
   if (key !== process.env.ADMIN_KEY) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
 
   try {
-    const stmt = db.prepare('SELECT * FROM contacts WHERE id = ?');
-    const contact = stmt.get(req.params.id);
+    const result = await db.execute({
+      sql: 'SELECT * FROM contacts WHERE id = ?',
+      args: [req.params.id]
+    });
 
-    if (!contact) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Contact not found' });
     }
 
-    res.json({ success: true, contact });
+    res.json({ success: true, contact: result.rows[0] });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch contact' });
   }
 });
 
 // Update contact status
-app.patch('/api/contacts/:id', (req, res) => {
+app.patch('/api/contacts/:id', async (req, res) => {
   const { key } = req.query;
   if (key !== process.env.ADMIN_KEY) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -283,10 +292,12 @@ app.patch('/api/contacts/:id', (req, res) => {
   }
 
   try {
-    const stmt = db.prepare('UPDATE contacts SET status = ? WHERE id = ?');
-    const result = stmt.run(status, req.params.id);
+    const result = await db.execute({
+      sql: 'UPDATE contacts SET status = ? WHERE id = ?',
+      args: [status, req.params.id]
+    });
 
-    if (result.changes === 0) {
+    if (result.rowsAffected === 0) {
       return res.status(404).json({ success: false, error: 'Contact not found' });
     }
 
@@ -297,17 +308,19 @@ app.patch('/api/contacts/:id', (req, res) => {
 });
 
 // Delete contact
-app.delete('/api/contacts/:id', (req, res) => {
+app.delete('/api/contacts/:id', async (req, res) => {
   const { key } = req.query;
   if (key !== process.env.ADMIN_KEY) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
 
   try {
-    const stmt = db.prepare('DELETE FROM contacts WHERE id = ?');
-    const result = stmt.run(req.params.id);
+    const result = await db.execute({
+      sql: 'DELETE FROM contacts WHERE id = ?',
+      args: [req.params.id]
+    });
 
-    if (result.changes === 0) {
+    if (result.rowsAffected === 0) {
       return res.status(404).json({ success: false, error: 'Contact not found' });
     }
 
@@ -318,24 +331,22 @@ app.delete('/api/contacts/:id', (req, res) => {
 });
 
 // Get projects
-app.get('/api/projects', (req, res) => {
+app.get('/api/projects', async (req, res) => {
   try {
-    const stmt = db.prepare('SELECT * FROM projects ORDER BY created_at DESC');
-    const projects = stmt.all();
-    res.json({ success: true, projects });
+    const result = await db.execute('SELECT * FROM projects ORDER BY created_at DESC');
+    res.json({ success: true, projects: result.rows });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch projects' });
   }
 });
 
 // Get experiences
-app.get('/api/experiences', (req, res) => {
+app.get('/api/experiences', async (req, res) => {
   try {
-    const stmt = db.prepare('SELECT * FROM experiences ORDER BY created_at DESC');
-    const experiences = stmt.all();
-    
+    const result = await db.execute('SELECT * FROM experiences ORDER BY created_at DESC');
+
     // Parse JSON descriptions
-    const parsed = experiences.map(exp => ({
+    const parsed = result.rows.map(exp => ({
       ...exp,
       description: JSON.parse(exp.description || '[]')
     }));
@@ -347,18 +358,20 @@ app.get('/api/experiences', (req, res) => {
 });
 
 // Stats endpoint (for counters on frontend)
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
   try {
-    const contactCount = db.prepare('SELECT COUNT(*) as count FROM contacts').get().count;
-    const projectCount = db.prepare('SELECT COUNT(*) as count FROM projects').get().count;
-    const expCount = db.prepare('SELECT COUNT(*) as count FROM experiences').get().count;
+    const [contactRes, projectRes, expRes] = await Promise.all([
+      db.execute('SELECT COUNT(*) as count FROM contacts'),
+      db.execute('SELECT COUNT(*) as count FROM projects'),
+      db.execute('SELECT COUNT(*) as count FROM experiences')
+    ]);
 
     res.json({
       success: true,
       stats: {
-        messages: contactCount,
-        projects: projectCount,
-        internships: expCount,
+        messages: Number(contactRes.rows[0].count),
+        projects: Number(projectRes.rows[0].count),
+        internships: Number(expRes.rows[0].count),
         cgpa: 9.0,
         certificates: 7,
         technologies: 10,
@@ -372,28 +385,35 @@ app.get('/api/stats', (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ 
-    success: false, 
+  res.status(404).json({
+    success: false,
     error: 'Endpoint not found',
-    path: req.path 
+    path: req.path
   });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
-    success: false, 
-    error: 'Internal server error' 
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error'
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Portfolio backend running on http://localhost:${PORT}`);
-  console.log(`Database: ${DB_PATH}`);
-  console.log(`Contact form endpoint: POST /api/contact`);
-});
+// Start server (after DB is ready)
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Portfolio backend running on http://localhost:${PORT}`);
+      console.log(`Database: Turso (${process.env.TURSO_DATABASE_URL})`);
+      console.log(`Contact form endpoint: POST /api/contact`);
+    });
+  })
+  .catch(err => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });
 
 // Graceful shutdown
 process.on('SIGINT', () => {
