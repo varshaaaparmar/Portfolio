@@ -1,6 +1,6 @@
-## Portfolio Backend
+# Portfolio Backend
 
-This is the backend for my portfolio website, built with Node.js, Express and SQLite.
+This is the backend for my portfolio website, built with Node.js, Express and Turso (a hosted, SQLite-compatible database).
 
 ## Live
 
@@ -15,7 +15,7 @@ This is the backend for my portfolio website, built with Node.js, Express and SQ
 - Serves experience data
 - Has admin routes for managing contact messages
 - Has a stats endpoint
-- Uses SQLite, so the database and tables are created and seeded automatically the first time it runs
+- Uses Turso (hosted, SQLite-compatible), so data persists across restarts and redeploys — tables are created and seeded automatically the first time it runs
 - CORS is enabled
 - Basic input validation and error handling are in place
 
@@ -74,7 +74,8 @@ Create a `.env` file with:
 
 ```
 PORT=3000
-DB_PATH=./portfolio.db
+TURSO_DATABASE_URL=libsql://your-db-yourusername.turso.io
+TURSO_AUTH_TOKEN=your-turso-auth-token
 CORS_ORIGIN=https://varsha-portfolio.vercel.app
 ADMIN_KEY=choose-a-long-random-string-here
 
@@ -85,6 +86,7 @@ NOTIFY_EMAIL=youraddress@gmail.com
 ```
 
 A template is in `.env.example` — copy it to `.env` and fill in your own values.
+
 
 ⚠️ `ADMIN_KEY` guards the admin routes above. Pick a long, random value, keep it out of git (it should already be covered by `.gitignore` via `.env`), and never hardcode it in source or docs — a query-param key is easy to leak (browser history, server logs, Referer headers, screenshots) so treat it as sensitive even though it's a stopgap, not real auth. If it ever ends up visible somewhere (a shared screenshot, a public commit, etc.), rotate it immediately by changing `ADMIN_KEY` in `.env` and in Render's environment variables.
 
@@ -102,9 +104,10 @@ If `EMAIL_USER`/`EMAIL_PASS` are left blank, the server just skips sending email
 
 ## Database
 
-- File: `portfolio.db`
+- Hosted on Turso (SQLite-compatible), configured via `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`
 - Tables: `contacts`, `projects`, `experiences`
 - Gets seeded with real portfolio data the first time it runs
+- Unlike a local SQLite file, this data persists across Render restarts, redeploys, and free-tier spin-downs
 
 ## Notes for production
 
@@ -112,4 +115,4 @@ If `EMAIL_USER`/`EMAIL_PASS` are left blank, the server just skips sending email
 - Add rate limiting
 - Use real admin authentication instead of the query-param key
 - Both Vercel and Render already serve over HTTPS by default
-- Consider PostgreSQL if this needs to scale — Render's free tier disk is ephemeral, so the SQLite file (and any saved contact messages) can be wiped on redeploys or restarts
+- Data now persists via Turso 
